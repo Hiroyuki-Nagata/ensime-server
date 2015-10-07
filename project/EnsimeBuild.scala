@@ -5,7 +5,8 @@ import sbt.Keys._
 import sbt.{IntegrationTest => It, _}
 import scoverage.ScoverageKeys
 import sbtassembly.AssemblyKeys._
-
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 import scala.util.{Properties, Try}
 
 object EnsimeBuild extends Build with JdkResolver {
@@ -56,7 +57,7 @@ object EnsimeBuild extends Build with JdkResolver {
     Seq(s"-agentpath:${agent.getCanonicalPath}")
   }.getOrElse(Nil)
 
-  lazy val commonSettings = scalariformSettings ++ basicSettings ++ Seq(
+  lazy val commonSettings = scalariformSettings ++ basicSettings ++ mimaDefaultSettings ++ Seq(
     //resolvers += Resolver.sonatypeRepo("snapshots"),
     scalacOptions in Compile ++= Seq(
       // uncomment to debug implicit resolution compilation problems
@@ -110,7 +111,9 @@ object EnsimeBuild extends Build with JdkResolver {
       "Sonatype Nexus Repository Manager", "oss.sonatype.org",
       sys.env.getOrElse("SONATYPE_USERNAME", ""),
       sys.env.getOrElse("SONATYPE_PASSWORD", "")
-    )
+    ),
+    // compare with previous ensime SNAPSHOTS
+    previousArtifact <<= (organization, name, scalaBinaryVersion, version) { (o, n, sbv, ensimeVersion) => Some(o % (n + "_" + sbv) % ensimeVersion) }
   )
 
   lazy val commonItSettings = scalariformSettingsWithIt ++ Seq(
